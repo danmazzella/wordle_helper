@@ -181,6 +181,7 @@ const showPossibilities = async (dictionaryWords, tab) => {
   const wordResults = calculateRatings(potentialSolutions);
 
   // Sort the above result by how likely that word is to appear
+  // Letters that appear in the correct spot have double weight as those in the wrong spot
   const wordResultsFrequency = Object
     .fromEntries(Object
       .entries(wordResults).sort(([, a], [, b]) => ((b[0] * 2) + b[1]) - ((a[0] * 2) + a[1])));
