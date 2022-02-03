@@ -15,7 +15,9 @@ const processGuess = (guess, solution) => {
 
   const guessArr = guess.split('');
   // For each letters in the guess....
-  guessArr.forEach((guessLtr, guessLtrIdx) => {
+  Object.keys(guessArr).forEach((guessLtrIdx) => {
+    const guessLtr = guessArr[guessLtrIdx];
+
     // See if the letter is in the correct for the solution
     if (guessLtr === solution[guessLtrIdx]) {
       correctSpot += 1;
@@ -23,7 +25,8 @@ const processGuess = (guess, solution) => {
     } else {
       const solutionArr = solution.split('');
       // Compare the letter against every letter in the solution
-      solutionArr.forEach((solutionLtr, solutionLtrIdx) => {
+      Object.keys(solutionArr).forEach((solutionLtrIdx) => {
+        const solutionLtr = solutionArr[solutionLtrIdx];
         if (guessLtrIdx !== solutionLtrIdx && usedSolution[solutionLtrIdx] !== '0' && guessLtr === solutionLtr) {
           usedSolution = replaceAt(usedSolution, solutionLtrIdx, '0');
           wrongSpot += 1;
@@ -46,8 +49,10 @@ const renderPossibilityList = (ul, element) => {
 // For every word in the word list, compare it to the rest of the words in the word list
 const calculateRatings = (potentialSolutions) => {
   const wordResults = {};
-  potentialSolutions.forEach((isSolution) => {
-    potentialSolutions.forEach((guess) => {
+  Object.keys(potentialSolutions).forEach((isSolutionIdx) => {
+    const isSolution = potentialSolutions[isSolutionIdx];
+    Object.keys(potentialSolutions).forEach((guessIdx) => {
+      const guess = potentialSolutions[guessIdx];
       const results = processGuess(guess, isSolution);
       if (wordResults[guess]) {
         wordResults[guess][0] += results[0];
