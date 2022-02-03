@@ -1,0 +1,28 @@
+{
+    "manifest_version": 3,
+    "name": "Wordle Helper",
+    "description": "This extension will help you determine the words that fit your puzzle",
+    "version": "1.0",
+    "action": {
+        "default_icon": "icon.png",
+        "default_popup": "popup.html"
+    },
+    "permissions": [
+        "tabs",
+        "storage",
+        "scripting"
+    ],
+    "web_accessible_resources": [
+        {
+            "resources": [
+                "word-list.json"
+            ],
+            "matches": [
+                "https://www.powerlanguage.co.uk/*"
+            ]
+        }
+    ],
+    "host_permissions": [
+        "https://www.powerlanguage.co.uk/wordle/"
+    ]
+}
