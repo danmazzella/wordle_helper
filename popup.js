@@ -66,7 +66,7 @@ const calculateRatings = (potentialSolutions) => {
   return wordResults;
 };
 
-const showPossibilities = async (dictionaryWords, tab) => {
+const retrieveGameState = (tab) => new Promise(async (resolve) => {
   // Get the gameState for getting guesses and solution
   const gameStateStr = await chrome.scripting.executeScript({
     target: { tabId: tab.id },
@@ -76,6 +76,10 @@ const showPossibilities = async (dictionaryWords, tab) => {
   // Convert gameState to JSON
   const gameState = JSON.parse(gameStateStr[0].result);
 
+  return resolve(gameState);
+});
+
+const getGreenYellowGrey = (gameState) => {
   // When we find a letter that works, put it here so we know which position it goes to
   const greenLetters = {
     0: undefined,
@@ -92,7 +96,7 @@ const showPossibilities = async (dictionaryWords, tab) => {
     3: [],
     4: [],
   };
-  // All letters that do not exist in colution
+  // All letters that do not exist in solution
   const greyLetters = [];
   // Get solution from gameState
   const { solution } = gameState;
@@ -124,12 +128,18 @@ const showPossibilities = async (dictionaryWords, tab) => {
           greenLetters[letterIdx] = guessLtr;
         } else {
           // The letter is a yellow letter, add to yellowLetters
-          yellowLetters[letterIdx] = guessLtr;
+          yellowLetters[letterIdx].push(guessLtr);
         }
       });
     }
   });
 
+  return {
+    greenLetters, yellowLetters, greyLetters,
+  }
+}
+
+const getAllPossibleSolutions = (dictionaryWords, { greenLetters, yellowLetters, greyLetters }) => {
   // Create an array for all potential words
   const potentialSolutions = [];
 
@@ -182,6 +192,10 @@ const showPossibilities = async (dictionaryWords, tab) => {
     if (canWork) potentialSolutions.push(word);
   });
 
+  return potentialSolutions;
+}
+
+const getOrderedListOfSolutions = (potentialSolutions) => {
   // Now we are going to determine the likely hood of the answer based on most common letters
   const wordResults = calculateRatings(potentialSolutions);
 
@@ -195,6 +209,10 @@ const showPossibilities = async (dictionaryWords, tab) => {
   const ratedList = [];
   Object.keys(wordResultsFrequency).forEach(key => ratedList.push(key));
 
+  return ratedList;
+}
+
+const addPossibilitiesToPopup = async (ratedList) => {
   // Add the potential words to the HTML popup
   const ul = document.createElement('ul');
   ul.setAttribute('id', 'proList');
@@ -221,7 +239,11 @@ document.addEventListener('DOMContentLoaded', async () => {
     // The button helper for clicking "show possibilities"
     const checkPageButton = document.getElementById('showPossibles');
     checkPageButton.addEventListener('click', async () => {
-      showPossibilities(dictionaryWords, tab);
+      const gameState = await retrieveGameState(tab);
+      const { greenLetters, yellowLetters, greyLetters } = getGreenYellowGrey(gameState);
+      const potentialSolutions = getAllPossibleSolutions(dictionaryWords, { greenLetters, yellowLetters, greyLetters });
+      const ratedList = getOrderedListOfSolutions(potentialSolutions);
+      addPossibilitiesToPopup(ratedList);
     });
   } catch (err) {
     // Log exceptions
