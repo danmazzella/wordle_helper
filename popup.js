@@ -260,8 +260,8 @@ document.addEventListener('DOMContentLoaded', async () => {
       const gameState = await retrieveGameState(tab);
       const { greenLetters, yellowLetters, greyLetters } = getGreenYellowGrey(gameState);
       const potentialSolutions = getAllPossibleSolutions(dictionaryWords, { greenLetters, yellowLetters, greyLetters });
-      const ratedList = getOrderedListOfSolutions(potentialSolutions);
-      addPossibilitiesToPopup(ratedList);
+      // const ratedList = getOrderedListOfSolutions(potentialSolutions);
+      addPossibilitiesToPopup(potentialSolutions);
     });
 
     // Button to undo last guess
