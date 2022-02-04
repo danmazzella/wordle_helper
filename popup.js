@@ -1,50 +1,19 @@
 const getGameState = () => localStorage.gameState;
 
+// Remove the last guess from the page
 const removeLastGuess = (newState) => {
-  const rowIndex = newState.rowIndex;
+  // Find out what the row was
+  const { rowIndex } = newState;
+  // Save the new state on the site
   localStorage.setItem('gameState', JSON.stringify(newState));
-  const gameBoard = document.querySelector("body > game-app").shadowRoot.querySelector("#board")
+  // Get the game board
+  const gameBoard = document.querySelector('body > game-app').shadowRoot.querySelector('#board');
+  // Get the current row
   const row = gameBoard.childNodes.item(rowIndex);
-  row.setAttribute("letters", '');
+  // Remove all the letters from the row
+  row.setAttribute('letters', '');
+  // Reload the page
   window.location.reload();
-};
-
-const replaceAt = (str, index, replacement) => str.substr(0, index) + replacement + str.substr(index + replacement.length);
-
-// Take a guess and a solution, and compare the guess against the solution
-// to determine how many letters appear in the correct spot and how many letters
-// appear in the wrong spot. This will help us determine which words have the most 
-// re-occurring letters
-const processGuess = (guess, solution) => {
-  let correctSpot = 0;
-  let wrongSpot = 0;
-
-  // Create a deep copy
-  let usedSolution = ` ${solution}`.slice(1);
-
-  const guessArr = guess.split('');
-  // For each letters in the guess....
-  Object.keys(guessArr).forEach((guessLtrIdx) => {
-    const guessLtr = guessArr[guessLtrIdx];
-
-    // See if the letter is in the correct for the solution
-    if (guessLtr === solution[guessLtrIdx]) {
-      correctSpot += 1;
-      usedSolution = replaceAt(usedSolution, guessLtrIdx, '0');
-    } else {
-      const solutionArr = solution.split('');
-      // Compare the letter against every letter in the solution
-      Object.keys(solutionArr).forEach((solutionLtrIdx) => {
-        const solutionLtr = solutionArr[solutionLtrIdx];
-        if (guessLtrIdx !== solutionLtrIdx && usedSolution[solutionLtrIdx] !== '0' && guessLtr === solutionLtr) {
-          usedSolution = replaceAt(usedSolution, solutionLtrIdx, '0');
-          wrongSpot += 1;
-        }
-      })
-    }
-  })
-
-  return [correctSpot, wrongSpot];
 };
 
 // Show the possibilities in the popup
@@ -55,27 +24,7 @@ const renderPossibilityList = (ul, element) => {
   li.innerHTML += element;
 };
 
-// For every word in the word list, compare it to the rest of the words in the word list
-const calculateRatings = (potentialSolutions) => {
-  const wordResults = {};
-  Object.keys(potentialSolutions).forEach((isSolutionIdx) => {
-    const isSolution = potentialSolutions[isSolutionIdx];
-    Object.keys(potentialSolutions).forEach((guessIdx) => {
-      const guess = potentialSolutions[guessIdx];
-      const results = processGuess(guess, isSolution);
-      if (wordResults[guess]) {
-        wordResults[guess][0] += results[0];
-        wordResults[guess][1] += results[1];
-      } else {
-        wordResults[guess] = results;
-      }
-    });
-  });
-
-  return wordResults;
-};
-
-const retrieveGameState = (tab) => new Promise(async (resolve) => {
+const retrieveGameState = tab => new Promise(async (resolve) => {
   // Get the gameState for getting guesses and solution
   const gameStateStr = await chrome.scripting.executeScript({
     target: { tabId: tab.id },
@@ -90,14 +39,19 @@ const retrieveGameState = (tab) => new Promise(async (resolve) => {
 
 const removeLastGuessFunc = (tab, newGameState) => new Promise(async (resolve) => {
   // Set the gameState to newGameState
-  const gameStateStr = await chrome.scripting.executeScript({
+  await chrome.scripting.executeScript({
     target: { tabId: tab.id },
     function: removeLastGuess,
     args: [newGameState],
   });
+
+  return resolve();
 });
 
 const getGreenYellowGrey = (gameState) => {
+  // Keep array of all yellow/green letters
+  const allLettersInWord = [];
+
   // When we find a letter that works, put it here so we know which position it goes to
   const greenLetters = {
     0: undefined,
@@ -144,18 +98,20 @@ const getGreenYellowGrey = (gameState) => {
         } else if (parseInt(letterExistInWordIdx, 10) === parseInt(letterIdx, 10)) {
           // The letter is a green letter, add to greenLetters
           greenLetters[letterIdx] = guessLtr;
+          allLettersInWord.push(guessLtr);
         } else {
           // The letter is a yellow letter, add to yellowLetters
           yellowLetters[letterIdx].push(guessLtr);
+          allLettersInWord.push(guessLtr);
         }
       });
     }
   });
 
   return {
-    greenLetters, yellowLetters, greyLetters,
-  }
-}
+    greenLetters, yellowLetters, greyLetters, allLettersInWord,
+  };
+};
 
 const getAllPossibleSolutions = (dictionaryWords, { greenLetters, yellowLetters, greyLetters }) => {
   // Create an array for all potential words
@@ -211,32 +167,84 @@ const getAllPossibleSolutions = (dictionaryWords, { greenLetters, yellowLetters,
   });
 
   return potentialSolutions;
-}
+};
 
-const getOrderedListOfSolutions = (potentialSolutions) => {
-  // Now we are going to determine the likely hood of the answer based on most common letters
-  const wordResults = calculateRatings(potentialSolutions);
+// This will find out how many times all the unguessed letters remain in the potential solutions
+const findUnGuessedLetters = (potentialSolutions, allLettersInWord, greyLetters) => {
+  const letterMap = {};
 
-  // Sort the above result by how likely that word is to appear
-  // Letters that appear in the correct spot have double weight as those in the wrong spot
-  const wordResultsFrequency = Object
-    .fromEntries(Object
-      .entries(wordResults).sort(([, a], [, b]) => ((b[0] * 2) + b[1]) - ((a[0] * 2) + a[1])));
+  // For each potential solution
+  potentialSolutions.forEach((word) => {
+    const wordSplit = word.split('');
 
-  // Just return the words without the "likelyhood"
-  const ratedList = [];
-  Object.keys(wordResultsFrequency).forEach(key => ratedList.push(key));
+    wordSplit.forEach((wordLtr) => {
+      // Find out if the letter exists in the solution
+      const inWordIdx = allLettersInWord.findIndex(ltr => ltr === wordLtr);
+      // Find out if the letter was already guessed
+      const greyLetterIdx = greyLetters.findIndex(ltr => ltr === wordLtr);
 
-  return ratedList;
-}
+      // If the letter isn't in the solution and hasn't been guessed yet
+      if (inWordIdx === -1 && greyLetterIdx === -1) {
+        let letterArr = letterMap[wordLtr];
+        if (letterArr === undefined) letterArr = 0;
+        // Increment the number of times the letter has appeared in a possible solution
+        letterArr += 1;
+        letterMap[wordLtr] = letterArr;
+      }
+    });
+  });
 
-const addPossibilitiesToPopup = async (ratedList) => {
+  return letterMap;
+};
+
+
+// Now find out which potential words have the most commonly occurring letters
+const findWordsWithMostLetters = (dictionary, { letterMap, unGuessedLetters }) => {
+  const wordArr = [];
+
+  // For each word in dictionary
+  dictionary.forEach((word) => {
+    const wordSplit = word.split('');
+    let letterMatch = 0;
+    const letterMatches = [];
+
+    wordSplit.forEach((wordLtr) => {
+      // Find out how many times this letter occurs in the remaining solutions
+      const existCount = letterMap[wordLtr];
+      // Make sure this letter hasn't already appeared in this word
+      const alreadyInWord = letterMatches.findIndex((ltr) => ltr === wordLtr);
+
+      if (existCount !== undefined && alreadyInWord === -1) {
+        letterMatch += existCount
+        letterMatches.push(wordLtr);
+      }
+    });
+
+    // Add the word and the sum of number of times it's letters appeared in potential solutions
+    wordArr.push({ word, count: letterMatch });
+  });
+
+  // Sort so we get the words with the most common letters in solutions
+  wordArr.sort((a, b) => b.count - a.count);
+
+  return wordArr;
+};
+
+const addPossibilitiesToPopup = (ratedList) => {
   // Add the potential words to the HTML popup
   const ul = document.createElement('ul');
   ul.setAttribute('id', 'proList');
-  document.getElementById('main').appendChild(ul);
+  document.getElementById('solutions').appendChild(ul);
   ratedList.forEach(element => renderPossibilityList(ul, element));
 };
+
+const addGoodGuesses = (goodGuesses) => {
+  // Add the good guesses to the HTML popup
+  const ul = document.createElement('ul');
+  ul.setAttribute('id', 'goodList');
+  document.getElementById('guesses').appendChild(ul);
+  goodGuesses.forEach(element => renderPossibilityList(ul, `${element.word} (${element.count})`));
+}
 
 document.addEventListener('DOMContentLoaded', async () => {
   try {
@@ -258,10 +266,20 @@ document.addEventListener('DOMContentLoaded', async () => {
     const checkPageButton = document.getElementById('showPossibles');
     checkPageButton.addEventListener('click', async () => {
       const gameState = await retrieveGameState(tab);
-      const { greenLetters, yellowLetters, greyLetters } = getGreenYellowGrey(gameState);
+
+      const {
+        allLettersInWord,
+        greenLetters,
+        greyLetters,
+        yellowLetters,
+      } = getGreenYellowGrey(gameState);
+
       const potentialSolutions = getAllPossibleSolutions(dictionaryWords, { greenLetters, yellowLetters, greyLetters });
-      // const ratedList = getOrderedListOfSolutions(potentialSolutions);
+      const letterMap = findUnGuessedLetters(potentialSolutions, allLettersInWord, greyLetters);
+      const wordLotsLetters = findWordsWithMostLetters(dictionaryWords, letterMap);
+
       addPossibilitiesToPopup(potentialSolutions);
+      addGoodGuesses(wordLotsLetters);
     });
 
     // Button to undo last guess
