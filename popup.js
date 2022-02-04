@@ -1,5 +1,14 @@
 const getGameState = () => localStorage.gameState;
 
+const removeLastGuess = (newState) => {
+  const rowIndex = newState.rowIndex;
+  localStorage.setItem('gameState', JSON.stringify(newState));
+  const gameBoard = document.querySelector("body > game-app").shadowRoot.querySelector("#board")
+  const row = gameBoard.childNodes.item(rowIndex);
+  row.setAttribute("letters", '');
+  window.location.reload();
+};
+
 const replaceAt = (str, index, replacement) => str.substr(0, index) + replacement + str.substr(index + replacement.length);
 
 // Take a guess and a solution, and compare the guess against the solution
@@ -77,6 +86,15 @@ const retrieveGameState = (tab) => new Promise(async (resolve) => {
   const gameState = JSON.parse(gameStateStr[0].result);
 
   return resolve(gameState);
+});
+
+const removeLastGuessFunc = (tab, newGameState) => new Promise(async (resolve) => {
+  // Set the gameState to newGameState
+  const gameStateStr = await chrome.scripting.executeScript({
+    target: { tabId: tab.id },
+    function: removeLastGuess,
+    args: [newGameState],
+  });
 });
 
 const getGreenYellowGrey = (gameState) => {
@@ -244,6 +262,17 @@ document.addEventListener('DOMContentLoaded', async () => {
       const potentialSolutions = getAllPossibleSolutions(dictionaryWords, { greenLetters, yellowLetters, greyLetters });
       const ratedList = getOrderedListOfSolutions(potentialSolutions);
       addPossibilitiesToPopup(ratedList);
+    });
+
+    // Button to undo last guess
+    const removeLastGuessBtn = document.getElementById('undo');
+    removeLastGuessBtn.addEventListener('click', async () => {
+      const gameState = await retrieveGameState(tab);
+      gameState.rowIndex -= 1;
+      const newRowIndex = gameState.rowIndex;
+      gameState.boardState[newRowIndex] = '';
+      gameState.evaluations[newRowIndex] = null;
+      await removeLastGuessFunc(tab, gameState);
     });
   } catch (err) {
     // Log exceptions
