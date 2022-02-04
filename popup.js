@@ -199,7 +199,7 @@ const findUnGuessedLetters = (potentialSolutions, allLettersInWord, greyLetters)
 
 
 // Now find out which potential words have the most commonly occurring letters
-const findWordsWithMostLetters = (dictionary, { letterMap, unGuessedLetters }) => {
+const findWordsWithMostLetters = (dictionary, letterMap) => {
   const wordArr = [];
 
   // For each word in dictionary
@@ -212,10 +212,10 @@ const findWordsWithMostLetters = (dictionary, { letterMap, unGuessedLetters }) =
       // Find out how many times this letter occurs in the remaining solutions
       const existCount = letterMap[wordLtr];
       // Make sure this letter hasn't already appeared in this word
-      const alreadyInWord = letterMatches.findIndex((ltr) => ltr === wordLtr);
+      const alreadyInWord = letterMatches.findIndex(ltr => ltr === wordLtr);
 
       if (existCount !== undefined && alreadyInWord === -1) {
-        letterMatch += existCount
+        letterMatch += existCount;
         letterMatches.push(wordLtr);
       }
     });
@@ -244,7 +244,7 @@ const addGoodGuesses = (goodGuesses) => {
   ul.setAttribute('id', 'goodList');
   document.getElementById('guesses').appendChild(ul);
   goodGuesses.forEach(element => renderPossibilityList(ul, `${element.word} (${element.count})`));
-}
+};
 
 document.addEventListener('DOMContentLoaded', async () => {
   try {
