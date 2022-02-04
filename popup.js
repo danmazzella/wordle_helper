@@ -272,6 +272,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       const newRowIndex = gameState.rowIndex;
       gameState.boardState[newRowIndex] = '';
       gameState.evaluations[newRowIndex] = null;
+      gameState.gameStatus = 'IN_PROGRESS';
       await removeLastGuessFunc(tab, gameState);
     });
   } catch (err) {
