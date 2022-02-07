@@ -260,7 +260,9 @@ const findWordsWithMostLetters = (dictionary, letterMap) => {
     });
 
     // Add the word and the sum of number of times it's letters appeared in potential solutions
-    wordArr.push({ word, count: letterMatch });
+    if (letterMatch > 0) {
+      wordArr.push({ word, count: letterMatch });
+    }
   });
 
   // Sort so we get the words with the most common letters in solutions
@@ -271,17 +273,21 @@ const findWordsWithMostLetters = (dictionary, letterMap) => {
 
 const addPossibilitiesToPopup = (ratedList) => {
   // Add the potential words to the HTML popup
+  const parent = document.getElementById('solutions');
+  if (parent.firstChild) parent.removeChild(parent.firstChild);
   const ul = document.createElement('ul');
   ul.setAttribute('id', 'proList');
-  document.getElementById('solutions').appendChild(ul);
+  parent.appendChild(ul);
   ratedList.forEach(element => renderPossibilityList(ul, element));
 };
 
 const addGoodGuesses = (goodGuesses) => {
   // Add the good guesses to the HTML popup
+  const parent = document.getElementById('guesses');
+  if (parent.firstChild) parent.removeChild(parent.firstChild);
   const ul = document.createElement('ul');
   ul.setAttribute('id', 'goodList');
-  document.getElementById('guesses').appendChild(ul);
+  parent.appendChild(ul);
   goodGuesses.forEach(element => renderPossibilityList(ul, `${element.word} (${element.count})`));
 };
 
