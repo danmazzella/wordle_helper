@@ -50,7 +50,7 @@ const removeLastGuessFunc = (tab, newGameState) => new Promise(async (resolve) =
 
 const getGreenYellowGrey = (gameState) => {
   // Keep array of all yellow/green letters
-  const allLettersInWord = [];
+  let allLettersInWord = [];
 
   // When we find a letter that works, put it here so we know which position it goes to
   const greenLetters = {
@@ -92,13 +92,13 @@ const getGreenYellowGrey = (gameState) => {
         // Where the guessed letter appears in the solution
         const letterExistInWordIdx = solutionSplit.findIndex(solutionLtr => guessLtr === solutionLtr);
 
-        if (letterExistInWordIdx === -1) {
-          // The letter does not exist at all in solution, add to greyLetters
-          greyLetters.push(guessLtr);
-        } else if (parseInt(letterExistInWordIdx, 10) === parseInt(letterIdx, 10)) {
+        if (solutionSplit[letterIdx] === guessLtr) {
           // The letter is a green letter, add to greenLetters
           greenLetters[letterIdx] = guessLtr;
           allLettersInWord.push(guessLtr);
+        } else if (letterExistInWordIdx === -1) {
+          // The letter does not exist at all in solution, add to greyLetters
+          greyLetters.push(guessLtr);
         } else {
           // The letter is a yellow letter, add to yellowLetters
           yellowLetters[letterIdx].push(guessLtr);
@@ -108,12 +108,14 @@ const getGreenYellowGrey = (gameState) => {
     }
   });
 
+  allLettersInWord = [...new Set(allLettersInWord)];
+
   return {
     greenLetters, yellowLetters, greyLetters, allLettersInWord,
   };
 };
 
-const getAllPossibleSolutions = (dictionaryWords, { greenLetters, yellowLetters, greyLetters }) => {
+const getAllPossibleSolutions = (dictionaryWords, { greenLetters, yellowLetters, greyLetters, allLettersInWord }) => {
   // Create an array for all potential words
   const potentialSolutions = [];
 
@@ -124,46 +126,56 @@ const getAllPossibleSolutions = (dictionaryWords, { greenLetters, yellowLetters,
     // Split the dictionary word to array of characters
     const wordSplit = word.split('');
 
-    // For each letter in the word, we have to check it against green letters, yellow letters, and grey letters
-    Object.keys(wordSplit).forEach((letterIdx) => {
-      const letter = wordSplit[letterIdx];
-
-      // GREY START : Check if any grey letters occur in this word
-      const letterExistInWordIdx = greyLetters.findIndex(ltr => ltr === letter);
-      if (letterExistInWordIdx > -1) canWork = false;
-      // GREY END
-
-      // GREEN START : Check if any green letters appear in the correct positions
-      if (canWork === true) {
-        // If green letter in this position, return the letter, otherwise undefined
-        const posGreenLetter = greenLetters[letterIdx];
-
-        // Check if the returned "green letter" is undefined, or if it matches the "word letter"
-        if (posGreenLetter !== undefined && posGreenLetter !== letter) {
-          // The green letter does not match the word letter
-          canWork = false;
-        }
-      }
-      // GREEN END
-
-      // YELLOW START : Check if this word has any yellow letters in a spot we know the letter is not supposed to be in
-      if (canWork === true) {
-        // Get the array of letters for this position
-        const notPosLetters = yellowLetters[letterIdx];
-
-        // Check if the word has the letter in a spot it's not supposed to be in
-        const isExistIdx = notPosLetters.findIndex(ltr => ltr === letter);
-
-        // If the letter appears in a spot we know it can't be in, then eliminate it
-        if (isExistIdx > -1) {
-          canWork = false;
-        }
-      }
-      // YELLOW END
+    // Check if word (5 letters) has all of the "in word letters" (1 - 4 letters)
+    const containsAll = allLettersInWord.every(element => {
+      return wordSplit.includes(element);
     });
+    if (!containsAll) canWork = false;
+
+    if (canWork) {
+      // For each letter in the word, we have to check it against green letters, yellow letters, and grey letters
+      Object.keys(wordSplit).forEach((letterIdx) => {
+        const letter = wordSplit[letterIdx];
+
+        // GREY START : Check if any grey letters occur in this word
+        const letterExistInWordIdx = greyLetters.findIndex(ltr => ltr === letter);
+        if (letterExistInWordIdx > -1) canWork = false;
+        // GREY END
+
+        // GREEN START : Check if any green letters appear in the correct positions
+        if (canWork === true) {
+          // If green letter in this position, return the letter, otherwise undefined
+          const posGreenLetter = greenLetters[letterIdx];
+
+          // Check if the returned "green letter" is undefined, or if it matches the "word letter"
+          if (posGreenLetter !== undefined && posGreenLetter !== letter) {
+            // The green letter does not match the word letter
+            canWork = false;
+          }
+        }
+        // GREEN END
+
+        // YELLOW START : Check if this word has any yellow letters in a spot we know the letter is not supposed to be in
+        if (canWork === true) {
+          // Get the array of letters for this position
+          const notPosLetters = yellowLetters[letterIdx];
+
+          // Check if the word has the letter in a spot it's not supposed to be in
+          const isExistIdx = notPosLetters.findIndex(ltr => ltr === letter);
+
+          // If the letter appears in a spot we know it can't be in, then eliminate it
+          if (isExistIdx > -1) {
+            canWork = false;
+          }
+        }
+        // YELLOW END
+      });
+    }
 
     // If the word can work, then add it to potential solutions
-    if (canWork) potentialSolutions.push(word);
+    if (canWork) {
+      potentialSolutions.push(word);
+    }
   });
 
   return potentialSolutions;
@@ -274,7 +286,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         yellowLetters,
       } = getGreenYellowGrey(gameState);
 
-      const potentialSolutions = getAllPossibleSolutions(dictionaryWords, { greenLetters, yellowLetters, greyLetters });
+      const potentialSolutions = getAllPossibleSolutions(dictionaryWords, { greenLetters, yellowLetters, greyLetters, allLettersInWord });
       const letterMap = findUnGuessedLetters(potentialSolutions, allLettersInWord, greyLetters);
       const wordLotsLetters = findWordsWithMostLetters(dictionaryWords, letterMap);
 

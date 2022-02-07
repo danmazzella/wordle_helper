@@ -1,0 +1,14 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "type": "chrome",
+            "request": "launch",
+            "name": "ChromeDebug",
+            "url": "https://www.powerlanguage.co.uk/wordle/",
+            "runtimeArgs": [
+                "--load-extension=${workspaceFolder}"
+            ]
+        }
+    ]
+}
