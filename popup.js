@@ -84,6 +84,9 @@ const getGreenYellowGrey = (gameState) => {
       // Split guess into array of characters
       const guessSplit = guess.split('');
 
+      // All letters in this word that are both green and/or yellow
+      const goodLetters = [];
+
       // For each letter in the guess, we will compare it with every letter in the solution
       Object.keys(guessSplit).forEach((letterIdx) => {
         // This is the current letter in guess
@@ -95,24 +98,50 @@ const getGreenYellowGrey = (gameState) => {
         if (solutionSplit[letterIdx] === guessLtr) {
           // The letter is a green letter, add to greenLetters
           greenLetters[letterIdx] = guessLtr;
-          allLettersInWord.push(guessLtr);
+          goodLetters.push(guessLtr);
         } else if (letterExistInWordIdx === -1) {
           // The letter does not exist at all in solution, add to greyLetters
           greyLetters.push(guessLtr);
         } else {
           // The letter is a yellow letter, add to yellowLetters
           yellowLetters[letterIdx].push(guessLtr);
-          allLettersInWord.push(guessLtr);
+          goodLetters.push(guessLtr);
         }
       });
+
+      // Take all the letters not in the current guess, and add them to "goodLetters" and overwrite allLetters with new arr
+      const notInAllLetters = allLettersInWord.filter(ltr => !goodLetters.includes(ltr));
+      allLettersInWord = goodLetters.concat(notInAllLetters);
     }
   });
-
-  allLettersInWord = [...new Set(allLettersInWord)];
 
   return {
     greenLetters, yellowLetters, greyLetters, allLettersInWord,
   };
+};
+
+const containsAll = (requiredLetterArr, arrToTest) => {
+  const letterMap = {};
+
+  requiredLetterArr.forEach((ltr) => {
+    if (letterMap[ltr] === undefined) {
+      letterMap[ltr] = 1;
+      return;
+    }
+    letterMap[ltr] += 1;
+  });
+
+
+  arrToTest.forEach((ltr) => {
+    if (letterMap[ltr] !== undefined) letterMap[ltr] -= 1;
+  });
+
+  let hasAll = true;
+  Object.keys(letterMap).forEach((key) => {
+    if (letterMap[key] > 0) hasAll = false;
+  });
+
+  return hasAll;
 };
 
 const getAllPossibleSolutions = (dictionaryWords, { greenLetters, yellowLetters, greyLetters, allLettersInWord }) => {
@@ -127,10 +156,8 @@ const getAllPossibleSolutions = (dictionaryWords, { greenLetters, yellowLetters,
     const wordSplit = word.split('');
 
     // Check if word (5 letters) has all of the "in word letters" (1 - 4 letters)
-    const containsAll = allLettersInWord.every(element => {
-      return wordSplit.includes(element);
-    });
-    if (!containsAll) canWork = false;
+    const containsAllLetters = containsAll(allLettersInWord, wordSplit); // allLettersInWord.every(element => wordSplit.includes(element));
+    if (!containsAllLetters) canWork = false;
 
     if (canWork) {
       // For each letter in the word, we have to check it against green letters, yellow letters, and grey letters
