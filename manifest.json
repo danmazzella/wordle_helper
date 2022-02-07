@@ -8,7 +8,6 @@
         "default_popup": "popup.html"
     },
     "permissions": [
-        "tabs",
         "scripting"
     ],
     "web_accessible_resources": [
