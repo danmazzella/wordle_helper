@@ -17,7 +17,7 @@
             display: inline-block;
             width: 48%;
             height: 400px;
-            border: 1px solid red;
+            border: 1px solid black;
             overflow: scroll;
         }
 
@@ -25,8 +25,13 @@
             display: inline-block;
             width: 48%;
             height: 400px;
-            border: 1px solid green;
+            border: 1px solid black;
             overflow: scroll;
+        }
+
+        p {
+            text-align: center;
+            font-weight: bold;
         }
 
         /* ul {
@@ -43,8 +48,12 @@
         <button id="showPossibles">Show Possibilities!</button>
         <button id="undo">Undo Last Guess</button>
         <div id="wrapper">
-            <div id="solutions"></div>
-            <div id="guesses"></div>
+            <div id="solutions">
+                <p>Potential Solutions</p>
+            </div>
+            <div id="guesses">
+                <p>Words with Unused Letters</p>
+            </div>
         </div>
     </div>
 </body>

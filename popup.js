@@ -120,9 +120,11 @@ const getGreenYellowGrey = (gameState) => {
   };
 };
 
+// Function to make sure that the arrToTest contains all the letters in requiredLetterArr
 const containsAll = (requiredLetterArr, arrToTest) => {
   const letterMap = {};
 
+  // Create a map of all the letters in the word, and how many times they appear
   requiredLetterArr.forEach((ltr) => {
     if (letterMap[ltr] === undefined) {
       letterMap[ltr] = 1;
@@ -132,10 +134,12 @@ const containsAll = (requiredLetterArr, arrToTest) => {
   });
 
 
+  // For each letter in the test word, subtract from the count
   arrToTest.forEach((ltr) => {
     if (letterMap[ltr] !== undefined) letterMap[ltr] -= 1;
   });
 
+  // Check all the letters to make sure they are all <= 0. If not then there were letters not in the word
   let hasAll = true;
   Object.keys(letterMap).forEach((key) => {
     if (letterMap[key] > 0) hasAll = false;
