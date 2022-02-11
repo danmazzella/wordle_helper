@@ -2,7 +2,7 @@
     "manifest_version": 3,
     "name": "Wordle Helper",
     "description": "This extension will help you determine the words that fit your puzzle",
-    "version": "1.2",
+    "version": "1.3",
     "action": {
         "default_icon": "icon.png",
         "default_popup": "popup.html"
@@ -16,11 +16,11 @@
                 "word-list.json"
             ],
             "matches": [
-                "https://www.powerlanguage.co.uk/*"
+                "https://www.nytimes.com/*"
             ]
         }
     ],
     "host_permissions": [
-        "https://www.powerlanguage.co.uk/wordle/"
+        "https://www.nytimes.com/games/wordle/index.html"
     ]
 }

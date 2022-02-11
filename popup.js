@@ -1,11 +1,11 @@
-const getGameState = () => localStorage.gameState;
+const getGameState = () => localStorage['nyt-wordle-state'];
 
 // Remove the last guess from the page
 const removeLastGuess = (newState) => {
   // Find out what the row was
   const { rowIndex } = newState;
   // Save the new state on the site
-  localStorage.setItem('gameState', JSON.stringify(newState));
+  localStorage.setItem('nyt-wordle-state', JSON.stringify(newState));
   // Get the game board
   const gameBoard = document.querySelector('body > game-app').shadowRoot.querySelector('#board');
   // Get the current row
