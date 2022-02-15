@@ -314,6 +314,9 @@ document.addEventListener('DOMContentLoaded', async () => {
     // The button helper for clicking "show possibilities"
     const checkPageButton = document.getElementById('showPossibles');
     checkPageButton.addEventListener('click', async () => {
+      checkPageButton.disabled = true;
+      setTimeout(() => checkPageButton.disabled = false, 250)
+
       const gameState = await retrieveGameState(tab);
 
       const {
@@ -334,8 +337,11 @@ document.addEventListener('DOMContentLoaded', async () => {
     // Button to undo last guess
     const removeLastGuessBtn = document.getElementById('undo');
     removeLastGuessBtn.addEventListener('click', async () => {
+      removeLastGuessBtn.disabled = true;
+      setTimeout(() => removeLastGuessBtn.disabled = false, 250)
+
       const gameState = await retrieveGameState(tab);
-      gameState.rowIndex -= 1;
+      if (gameState.rowIndex > 0) gameState.rowIndex -= 1;
       const newRowIndex = gameState.rowIndex;
       gameState.boardState[newRowIndex] = '';
       gameState.evaluations[newRowIndex] = null;
