@@ -48,6 +48,22 @@ const removeLastGuessFunc = (tab, newGameState) => new Promise(async (resolve) =
   return resolve();
 });
 
+const checkIfLetterOccursAgain = (solution, guessArr, guessLtr) => {
+  const splitSolution = solution.split('');
+  // Find out how many times letter occurs in solution
+  const solutionOccurrences = splitSolution.filter((ltr) => ltr === guessLtr).length;
+  // Find out how many times letter occurs in guessArr
+  const guessOccurrences = guessArr.filter((ltr) => ltr === guessLtr).length;
+
+  console.log('GuessOccur: ', guessArr);
+
+  if (guessOccurrences < solutionOccurrences) {
+    return true;
+  }
+
+  return false;
+};
+
 const getGreenYellowGrey = (gameState) => {
   // Keep array of all yellow/green letters
   let allLettersInWord = [];
@@ -96,16 +112,22 @@ const getGreenYellowGrey = (gameState) => {
         const letterExistInWordIdx = solutionSplit.findIndex(solutionLtr => guessLtr === solutionLtr);
 
         if (solutionSplit[letterIdx] === guessLtr) {
-          // The letter is a green letter, add to greenLetters
-          greenLetters[letterIdx] = guessLtr;
-          goodLetters.push(guessLtr);
+          // Check if already exists in array and not again in solution
+          if (checkIfLetterOccursAgain(solution, goodLetters, guessLtr)) {
+            // The letter is a green letter, add to greenLetters
+            greenLetters[letterIdx] = guessLtr;
+            goodLetters.push(guessLtr);
+          }
         } else if (letterExistInWordIdx === -1) {
           // The letter does not exist at all in solution, add to greyLetters
           greyLetters.push(guessLtr);
         } else {
-          // The letter is a yellow letter, add to yellowLetters
-          yellowLetters[letterIdx].push(guessLtr);
-          goodLetters.push(guessLtr);
+          // Check if already exists in array and not again in solution
+          if (checkIfLetterOccursAgain(solution, goodLetters, guessLtr)) {
+            // The letter is a yellow letter, add to yellowLetters
+            yellowLetters[letterIdx].push(guessLtr);
+            goodLetters.push(guessLtr);
+          }
         }
       });
 
