@@ -55,8 +55,6 @@ const checkIfLetterOccursAgain = (solution, guessArr, guessLtr) => {
   // Find out how many times letter occurs in guessArr
   const guessOccurrences = guessArr.filter((ltr) => ltr === guessLtr).length;
 
-  console.log('GuessOccur: ', guessArr);
-
   if (guessOccurrences < solutionOccurrences) {
     return true;
   }
